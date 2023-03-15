@@ -1,0 +1,272 @@
+---
+title: 'Curso: Teoría de la Diversidad Biológica - 2021'
+author: "Ana Borthagaray y Mariana Illarze"
+date: "14/05/2021"
+output: html_document
+subtitle: 'Práctico patrones estructurales: Anidamiento, Modularidad y Chekerboard'
+---
+
+<h1 style="color:darkviolet;">Breve introducción teórica</h1>
+# Redes ecológicas
+El concepto de red ecológica ha estado hace tiempo en el corazón de la ecología, originalmente una red ecológica se correspondia con una representación de las interacciones bióticas que ocurre entre especies dentro de una comunidad, i.e.: en el que las especies (nodos) están conectadas por interacciones entre pares (enlaces-links). Estas interacciones pueden ser tróficas, simbióticas, etc. Junto con la formalización de nuevas teorías en el campo de la ecología este concepto se extendió para dar cuenta de cualquier conjunto de relaciones ecológicas entre pares de entidades de interés ecológicos, cómo las redes de ocurrencia, metacomunidades, etc.
+
+El uso en el campo de la Ecología de las herramientas metodológicas y modelos de análisis de la Teoría de Grafos, representó un gran aporte para el avance de la materia. A partir de este abordaje es posible cuantificar múltiples fenómenos biológicos, investigar la estructura, función y evolución de los sistemas ecológicos.
+
+# Estructura de las redes ecológicas
+La configuración de cada red, ordenamiento de nodos y establecimiento de los links son posibles de estimar y cuantificar a partir de las métricas de estructura de las redes. 
+Estas métricas dan cuenta de distintos procesos ecológicos involucrados en el ensamblaje de las comunidades.
+
+## ¿Qué son los patrones de co-ocurrencia?
+Son ordenamientos NO aleatorios de las interacciones en una red ecológica, i.e.: . Estas interacciones representan relaciones tróficas, mutualistas, de co-ocurrencia, de ocurrencia, etc. Por lo tanto en la medida de que estas interacciones no ocurren al azar, es posible de cuantificar el grado de estructura en términos de estos patrones, i.e.: que tanto se aleja del azar y se aproxima a un patron de co-ocurrencia identificado.
+Tres patrones de co-ocurrencia han sido ampliamente estudiados e identificados en sistemas naturales de diversos tipos:
+
+**1. Anidamiento:** en donde las especies de sitios más pobres representan subconjuntos de sitios más ricos.
+
+**2. Checkerboard (co-ocurrencia negativa):**pares de especies coexisten con otras menos de lo esperado por azar.
+
+**3. Modularidad:** agregados de especies con mayor probabilidad de co-ocurrencia que con otras especies de la metacomunidad.
+
+![](/Users/mariana/Desktop/trabajos_R/D.todo1poco_pruebas/patrones.jpg)
+
+*Implicancias ecológicas de las estructuras de co-ocurrencia:*
+Distintos mecanismos ecológicos y evolutivos se han vinculado con estos patrones, entre ellos: procesos de colonización-extinción, relaciones inter-específicas antagónicas o mutualistas, filtros ambientales y atributos diferenciales de las especies. Adicionalmente, estas métricas han sido identificada con la estabilidad de los ecosistemas, por lo que comprender como las mismas se ven afectadas por el cambio global es clave para implementar estrategias de conservación de los sistemas naturales.
+
+## Tipos de redes: bipartitas, unipartitas, dirigidas, no-dirigidas
+Se reconocen distintas clasificaciones de redes que se representan con distintos tipos de grafos: 
+-	Por un lado tenemos la división de redes unipartitas y bipartitas.
+Las 1eras también conocidas como uni-modales en donde los links se establecen entre cualquiera de los nodos de la red. (típicamente los nodos son del mismo tipo, ej: redes tróficas, redes de co-ocurrencia, metacomunidades, etc.).
+Las 2das, las redes bipartitas o bi-modales, los links se establecen sólo entre nodos que pertenecen a dos subgrupos de nodos distintos, y no existen links dentro de los subgrupos.
+
+- Por otro lado, las redes se pueden clasificar en no-dirigidas y dirigidas, que se diferencian por el hecho de que estas últimas contienen información del flujo y dirección de la interacción. Podemos a su vez encontrar unipartitas y bipartitas no-dirigidas y dirigidas. 
+
+- Finalmente podemos hablar de redes binarias, donde todos los enlaces son iguales (se computa como un 1 en la matriz cuando existe ese enlace, en caso contrario como un 0), y redes pesadas donde los links difieren según un peso dado, podemos hablar de enlaces más o menos fuertes (pesados). Ej: dos comunidades que tienen muchas especies en común, se van a conectar a través de un enlace más fuerte que si el mismo ocurre entre dos comunidades que si bien están conectadas, comparten muchas menos especies. 
+
+## Represenatación de las redes ecológicas: redes de ocurrencia
+Tipicamente los ecólogos trabajan con bases de datos de incidencia, donde cada fila se corresponde con una observación que representa la incidencia (presencia) de la spp i en el sitio j, o en la dieta de la spp j, etc. (dependiendo del tipo de datos con el que se está trabajando). A partir de estos datos es posible estimar la red ecológica la cual se representa mediante un grafo. A su vez este grafo puede representarse de distintas formas, como: a) una lista de aristas, b) una matriz de incidencia (o adyacencia si se trabaja con redes unipartitas), y c) una lista de incidencia o adyacencias. 
+
+Veamos el caso de la **matriz de incidencia/adyacencia** que será el objeto de entrada (input) para las distintas funciones que veremos en el práctico. En estas matrices, para el caso de las redes de ocurrencia, por ejemplo, cada fila se corresponde con una especie y las columnas con los sitios (si estamos en redes mutualistas las columnas podrían representar especies de plantas visitadas por las spp polinizadoras, etc.), y donde cada celda de la matriz se corresponde con la presencia (1) o ausencia (0) de la spp i en el sitio j.
+
+este tipo de redes se tratan de **redes binarias** compuestas por unos y ceros, pero las mismas pueden ser representadas en su versión pesada, nos referimos entonces a **redes pesadas**, en donde se retienen los valores de abundancia de las especies (ya no solo indicamos su presencia sino que también su abundancia). Si bien este tipo de redes son más informativas, dependniendo del objetivo y tipo de análisis muchas veces puede ser conveniente utilizar la versión binaria de las redes para estimar estos patrones.
+Los algoritmos para estimar anidamiento y modularidad permiten trabajar hacerlo tanto para redes binarias como pesadas, puediendo o no estar correlacionados, siendo en muchos casos métricas complementarias. 
+
+<h1 style="color:darkviolet;">Herramientas prácticas para la estimación de métricas estructurales de las redes ecológicas</h1>
+## Preparamos la sesión de R
+
+```{r, include=TRUE,echo=TRUE,message = FALSE}
+
+# Cargamos a la sesión de R archivo .RData que contiene las bases de datos y objetos con los que vamos a trabajar:   
+load("practico_estr.RData")
+
+# Cargamos paquetes con que contienen las funciones con las que trabajaremos:
+library(vegan) 
+library(bipartite)
+library(rnetcarto)
+#library(igraph)
+# en caso de no tener instalado algunos de los paquetes utilizar el siguiente comando: install.packages(vegan)
+
+# Podemos abrir el objeto cargado para visualizar cómo es la matriz de incidencia con la que trabajaremos
+View(m_ocurr)
+head(m_ocurr)
+
+# Objetos que voy a utilizar:
+# invento una matriz como ejemplo
+#abundancias<-sample(seq(0,30,1),1000, replace = TRUE,prob = xxx) # remuestreo al azar y con reposición una secuencia de números enteros del 0 al 30, correspondientes a datos de abundancia. Agrego vector de probabilidades atribuyendo mayor probabilidad al 0, y luego con una probabilidad ley de potencia correspodnientes a muchas especies con pocas abundancias y pocas especies con abundancias altas.  
+#m.aleatoria<-matrix(abundancias,nrow = 40,ncol = 25)
+
+# cargo la base de datos XX
+#df_com<-read_csv(...)
+# checkeo la base de datos
+#str(df_com)
+#head(df_com)
+
+# transformo mi base de datos en una matriz de comunidades, importante tener claro que en este caso las especies van a estar en las filas, y los sitios en las columnas.
+# función co.g o ab.comm (de Mato y Ana)??
+#m_ocurr<-ab.comm(df_com, com_en=, spp_en=,ab=TRUE)
+#m_ocurr_bin<-ab.comm(df_com, com_en=, spp_en=,ab=FALSE) # o bien puedo a partir de m_ocurr: ifelse(m_ocurr>0,1,0)
+
+```
+
+# Estimación de los Patrones de co-ocurrencia
+<h5 style="color:red;">en construcción</h5>
+## Anidamiento 
+Fórmula...etc, brevemente explicando el algoritmo
+
+```{r, include=TRUE,echo=TRUE,message = FALSE}
+
+nestednodf(m_ocurr,weighted = TRUE) # el ppal. argumento es la matriz, y weighted en donde podemos especificar si estimamos el anidamiento pesado o binario
+
+visweb(m_ocurr, type = "nested") # visualización
+```
+
+¿Qué obtenemos?
+
+3 valores: optimización del anidamiento de sólo las columnas (N columns), solo las filas (N rows), o de ambas a la vez (NODF). (Estos 3 valores tienen sentido en la medida que estamos ante una matriz bipartita.)
+
+```{r, include=TRUE,echo=TRUE,message = FALSE}
+# anidamiento para la red binaria:
+nestednodf(m_ocurr_bin)
+visweb(m_ocurr_bin, type = "nested")
+
+```
+
+## Checkerboard
+Fórmula...etc, brevemente explicando el algoritmo
+
+```{r, include=TRUE,echo=TRUE,message = FALSE}
+nestedchecker(m_ocurr) # el unico argumento es la matriz, el algoritmo que estima checkerboard tiene en cuenta solo si las spp co-ocurren o no, sin importar su abundancia.
+nestedchecker(m_ocurr_bin) # como es de esperar obtenemos el mismo resultado
+```
+
+## Modularidad
+Fórmula...etc, brevemente explicando el algoritmo
+
+```{r, include=TRUE,echo=TRUE,message = FALSE}
+?netcarto
+netcarto(m_ocurr, bipartite = TRUE)
+modularidad<-netcarto(m_ocurr, bipartite = TRUE)[[2]]
+
+```
+
+¿Qué obtenemos?
+
+Una lista con dos elementos, el 1ero se corresponde con una tabla con datos acerca de los especies (nodos de la red), como ser el rol topológico (rol que ocupa una especie en la red en relación a la modularidad). El 2do elemento es el valor crudo de modularidad que buscamos, por lo tanto el que nos interesa en este momento retener. 
+
+```{r, include=TRUE,echo=TRUE,message = FALSE}
+visweb(m_ocurr, type = "diagonal")
+
+netcarto(m_ocurr_bin, bipartite = TRUE)
+visweb(m_ocurr_bin, type = "diagonal")
+
+```
+
+¿Qué podemos decir en cuanto al grado de anidamiento, checkerboard y modularidad de mi comunidad?
+
+¿Cómo podemos cuantificar estos patrones de forma tal que sean independientes del tamaño de la red y de la conectividad, y así poder comparar entre distintas comunidades?
+
+## Significancia de las métricas de co-ocurrencia en relación a modelos nulos: Z-scores
+<h5 style="color:red;">en construcción</h5>
+Para evitar la detección de estructura por el efecto del tamaño y la densidad de conexiones de la red una estrategia consiste en comparar el valor observado de la métrica en relación con a lo esperado a partir de una distribución nula. Se evalua de esta forma la significancia de la métrica, i.e.: si su valor pudo o no haber sido obtenido de una comunidad del mismo tamaño y cantidad de enlaces pero ensamblada al azar. Especificamente, las métricas son expresadas a partir de un Z-score. 
+$$
+Z_{score} = \frac{(X_{obs} − X_{null})}{SD_{null}}
+$$
+donde: 
+
+*X~obs~* es el valor observado de la métrica dada; *X~null~* y *SD~null~* son la media de la métrica y la desviación estándar respectivamente, obtenidas a partir del conjunto de matrices nulas. 
+
+Mediante esta transformación los valores significativos al 95 % de las métricas son aquellos mayores a 2, i.e.: gardo de estructuración mayor a lo esperado por azar (Ulrich y Gotelli 2007b).
+
+# Tipos de modelos nulos 
+<h5 style="color:red;">en construcción</h5>
+Existen varios métodos para generar matrices nulas a partir de una matriz dada. 
+Aquí utilizaremos un método del tipo fijo-fijo, basado en el algoritmo no secuencial para matrices binarias “sequential swap”, y una modificación del mismo "...", para matrices pesadas. Este método preserva fijo los totales de las filas y las columnas de la matriz original y luego inspecciona matrices aleatorias de 2 x 2 y realiza intercambios (swap) en ellas (Gotelli 2000, Miklós y Podani 2004).
+
+# Implementación de los modelos nulos en el R y cálculo de los Z-scores
+```{r, include=TRUE,echo=TRUE,message = FALSE}
+
+# Patrones a partir de matrices binarias
+# para generar matrices nulas y aplicarles una función en este caso, nestednodf, nestedchecker, y netcarto, exite una función muy sencilla de utilizar del paquete ´vegan`: oecosimu
+?oecosimu
+# Anidamiento
+anid_null_bin<-oecosimu(m_ocurr_bin,nestfun=nestednodf, method= "quasiswap",nsimul = 2000, burnin = 100, thin = 10)
+
+# veamos en que consiste la salida:
+anid_null_bin$oecosimu$z # de esta forma obtengo los 3 valores de anidamiento que habíamos visto pero esta vez estandarizados en un z-score.
+
+# puedo entonces guardarlo en un objeto:
+z_anid_bin<-anid_null_bin$oecosimu$z[3]
+anid_null_bin$oecosimu$statistic # da el grado de anidamiento "crudo"
+
+# Checkerboard
+checker_null_bin<-oecosimu(m_ocurr_bin,nestfun=nestedchecker, method= "quasiswap",statistic ="C.score",nsimul =  2000, burnin = 100, thin = 10)
+
+c.score_bin<-checker_null_bin$oecosimu$z #aquí el valor de z, es un único valor a diferencia de como se obtiene para el anidamiento
+c.score_bin
+checker_null_bin$oecosimu$statistic #da el grado de C.score crudo.
+
+# Modularidad
+fun_mod<-function(x) netcarto(x, bipartite = T)[[2]]
+mod_null_bin<-oecosimu(m_ocurr_bin,nestfun=fun_mod, method= "quasiswap", statistic="Modularity",nsimul =  20)#, burnin = 100, thin = 10) 
+z_mod_bin<-mod_null_bin$oecosimu$z
+z_mod_bin
+checker_null_bin$oecosimu$statistic #grado de Modularidad cruda.
+
+# Patrones a partir de matrices pesadas
+
+# creo lista con matrices nulas
+
+# Anidamiento
+
+# Modularidad
+
+## FALTA TERMINAR!!
+```
+
+Y ahora, ¿qué podemos decir los los valores de los patrones estandarizados?
+
+Con estos valores de z-scores podemos tener un atributo cuntitativo de la comunidad de estudio y poder hacer inferencias en relación a los procesos ecológicos y/o evolutivos que operan  sobre dicha comunidad. Así mismo es es posible comparar estas estructuras entre sistemas y a través del tiempo para comprender como las mismas responden a diferentes variables ambientales, etc.
+
+# ______________________________________________________
+# YAPA...
+## Representación gráfica de redes en R
+```{r, include=TRUE,echo=TRUE,message = FALSE}
+
+# Cargamos paquete: 
+library(sna)
+library(ape)
+
+# Métodos de estimación de Redes
+# 0. Distancia euclidiana entre todas las comunidades:
+as.matrix(dist(coord_charcos[,2:3]))->dist_ch # matriz de dist geográfica comunidad x comunidad, estimada a partir de las coordenadas XY
+View(dist_ch)
+
+gplot(dist_ch, coord= coord_charcos[,2:3],usearrows=F ,vertex.cex=1.5,vertex.col = "green", vertex.border = "red")
+#gplot, tiene muchos argumentos que periten mejorar la est'atica del grafo de salida, puede utilizarse para redes dirigidas, bipartitas, etc. 
+?gplot # Los invitamos a explorar...
+
+# 1. Árbol de mínima distancia (minimum spanning tree)
+# Grafo que conecta todos los nodos con la mínima distancia posible, sin que existan loops
+mst(dist_ch)->MST_charcos
+gplot(MST_charcos,diag=F,coord = coord_charcos[,2:3],usearrows = F,vertex.cex=1.5,vertex.col = "green",vertex.border = "red",edge.col = "red", new=FALSE) # el argumento new=FALSE, me plotea el grafo sobre otro grafo ya existente en el enviroment
+
+# 2. Distancia umbral de percolación
+# Distancia mínima a la cual todos los nodos de la red forman un único componente
+
+# corro funcion que explora entre todas las distancias posibles, cuál es la minima distancia que me garantiza que la red está conectada (forma un único gran componente)
+test.S.percolacion <- function (m_dist, br=1000) { #m_dist, es la matriz de distancias, br es la cantidad de cortes que voy probando
+  library (sna)
+  cortes<-seq (max(m_dist), min(m_dist),,br) # genera el vector de distancias para ir probando
+  out<-NULL
+  for (i in cortes) {   
+    conexiones <- ifelse (m_dist>i, 0, m_dist) # conexiones es cada matriz 
+    cc <- component.dist (conexiones) 
+    N <- ncol(conexiones) # cantidad de nodos de la matriz 
+    Nc <- (N-max(cc$csize)) # cuántos nodos no están en el componente mas grande
+    S <- ((sum(cc$csize^2)- (max (cc$csize^2)))/ Nc) # promedio de los tamanios de los clusters sin el grande
+    out <- rbind(out,c(S, i)) ##si Nan, tengo un solo componente
+      }
+  return (out)
+}
+
+expl_dist_percol<-test.S.percolacion(dist_ch)
+which(expl_dist_percol[,1]!="NaN")[1]
+expl_dist_percol[(which(expl_dist_percol[,1]!="NaN")[1])-1,2]
+umbral_percolacion<-ifelse(dist_ch>expl_dist_percol[(which(expl_dist_percol[,1]!="NaN")[1])-1,2],0,dist_ch)
+gplot(umbral_percolacion,coord=coord_charcos[,2:3],usearrows=F,vertex.cex=2,vertex.col = "orange", vertex.border = "white")
+
+# 3. Distancia umbral definida por el usuario
+# Se define una distancia umbral en base a algún criterio biológico (e.g.: capacidades de dispersión del pool de especies del sistema) o de conocimiento del funcionamiento del sistema. Todos los nodos de la red separados una distancia menor a dicha distancia umbral son conectados por un link.
+
+# Posible abordaje: si las comunidades comparten cierto porcentaje de especies (en este caso disimilitud menor a la media o quantile 0.5) se asume que existe flujo de individuos entre ellas y por lo tanto están conectadas. 
+as.matrix(vegdist(t(m_ocurr),method="bray"))->beta_ch #matriz de disimilitud en la composición de especies entre las comunidades
+quantile(beta_ch[upper.tri(beta_ch)]) # exploro los quantiles
+ifelse(beta_ch>quantile(beta_ch)[3],0,beta_ch)->umbral_beta_ch # creo la matriz de conexiones, si la disimilitud entre dos comunidades es mayor a la media no existe enlace entre ellas (0). 
+gplot(umbral_beta_ch,coord=coord_charcos[,2:3],usearrows=F,vertex.cex=2,vertex.col = "orange", vertex.border = "white")
+
+```
+#_______________________________________________________
+
+<h1 style="color:darkviolet;">Bibliografía</h1>
+Borthagaray, A. I. et al. 2015. Effects of Metacommunity Networks on Local Community Structures. - In: Aquatic Functional Biodiversity. Elsevier, pp. 75–111.
+
+# ______________________________________________________
+
